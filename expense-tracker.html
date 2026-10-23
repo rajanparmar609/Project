@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f6f7;--card:#fff;--ink:#12303a;--mute:#5d7882;--line:#d9e5e8;--accent:#0d7c8f;--ok:#1d8a4e;--warn:#c27a00;--bad:#c93a3a;--track:#e3edf0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1b20;--card:#162830;--ink:#e6f1f3;--mute:#8fb0ba;--line:#26414b;--accent:#3fc1d6;--ok:#4cc982;--warn:#e9a93a;--bad:#ef6b6b;--track:#21383f}}
+:root[data-theme="dark"]{--bg:#0e1b20;--card:#162830;--ink:#e6f1f3;--mute:#8fb0ba;--line:#26414b;--accent:#3fc1d6;--ok:#4cc982;--warn:#e9a93a;--bad:#ef6b6b;--track:#21383f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.5rem;font-weight:800;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px;font-size:.95rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.tabs{display:flex;gap:6px;background:var(--track);padding:4px;border-radius:12px;margin-bottom:16px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--mute);font:600 .9rem inherit;font-family:inherit;padding:10px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.big{font-size:2.4rem;font-weight:800;line-height:1.1}
+.status{font-weight:700;margin-top:6px}
+.bar{height:14px;background:var(--track);border-radius:99px;overflow:hidden;margin:16px 0 8px}
+.bar>i{display:block;height:100%;width:0;border-radius:99px;background:var(--ok);transition:width .5s ease,background .3s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.stats div{background:var(--bg);border-radius:10px;padding:10px}
+.stats small{display:block;color:var(--mute);font-size:.78rem}
+.stats b{font-size:1.05rem}
+label{display:block;font-weight:600;font-size:.88rem;margin-bottom:6px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>div{flex:1 1 140px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 18px;background:var(--accent);color:#fff;cursor:pointer;margin-top:12px}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.small{padding:6px 10px;margin:0;font-size:.82rem}
+html:not([data-theme="dark"]) .btn{color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#06222a}}
+html .btn.ghost,html:not([data-theme="dark"]) .btn.ghost,:root:not([data-theme="light"]) .btn.ghost{color:var(--bad);border-color:var(--bad);background:transparent}
+.resetbox{text-align:right;max-width:170px}
+.resetbox small{display:block;color:var(--mute);font-size:.75rem;line-height:1.3;margin-top:6px}
+.msg{min-height:1.3em;font-size:.88rem;margin-top:8px;font-weight:600}
+.msg.err{color:var(--bad)}.msg.good{color:var(--ok)}
+h2{font-size:1.05rem;margin:0 0 10px}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+li:first-child{border-top:0}
+li .n{flex:1;min-width:0}li .n span{display:block;color:var(--mute);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+li .a{font-weight:800}
+li button{background:transparent;border:0;color:var(--bad);cursor:pointer;font:inherit;font-size:.85rem;padding:6px}
+.empty{color:var(--mute);text-align:center;padding:18px 0}
+.hide{display:none}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+</style>
+</head>
+<body>
+<main>
+
+<!-- First-time setup -->
+<section id="setup" class="card hide">
+  <h1>Welcome 👋</h1>
+  <p class="sub">Set your budget to start tracking what you spend.</p>
+  <label for="b0">How much is your budget?</label>
+  <input id="b0" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 10000">
+  <button class="btn" id="saveB0">Save budget</button>
+  <div class="msg err" id="m0" role="alert"></div>
+</section>
+
+<!-- Main app -->
+<section id="app" class="hide">
+  <div class="top">
+    <div><h1>Expense Tracker</h1><p class="sub">See what you've spent and what's left.</p></div>
+    <div class="resetbox"><button class="btn ghost small" id="reset" title="Delete all data">Start over</button></div>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" id="tOrig" aria-selected="true">Original budget</button>
+    <button role="tab" id="tNew" aria-selected="false">New budget</button>
+  </div>
+
+  <div class="card" aria-live="polite">
+    <div id="sumTitle" class="sub" style="margin:0">Remaining</div>
+    <div class="big" id="remain">₹0</div>
+    <div class="status" id="status"></div>
+    <div class="bar" role="progressbar" aria-label="Budget used" aria-valuemin="0" aria-valuemax="100" id="pb"><i id="fill"></i></div>
+    <div class="sub" id="pct" style="margin:0"></div>
+    <div class="stats">
+      <div><small>Budget</small><b id="sBudget">₹0</b></div>
+      <div><small>Spent</small><b id="sSpent">₹0</b></div>
+      <div><small>Expenses</small><b id="sCount">0</b></div>
+    </div>
+  </div>
+
+  <div class="card" id="newBudgetCard">
+    <h2 id="nbTitle">Change your budget</h2>
+    <label for="b1">New budget amount (₹)</label>
+    <input id="b1" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 15000">
+    <button class="btn" id="saveB1">Save new budget</button>
+    <div class="msg" id="m1" role="alert"></div>
+  </div>
+
+  <div class="card">
+    <h2>Add an expense</h2>
+    <div class="row">
+      <div><label for="amt">Amount (₹)</label><input id="amt" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 250"></div>
+      <div><label for="note">What was it for? (optional)</label><input id="note" type="text" maxlength="40" placeholder="e.g. Groceries"></div>
+    </div>
+    <button class="btn" id="add">Add expense</button>
+    <div class="msg" id="m2" role="alert"></div>
+  </div>
+
+  <div class="card">
+    <h2>Your expenses</h2>
+    <ul id="list"></ul>
+  </div>
+</section>
+
+</main>
+<script>
+(function(){
+  var KEY='expense-tracker-v1';
+  var state={budget:null,newBudget:null,expenses:[],nextId:1,view:'orig'};
+  var $=function(id){return document.getElementById(id)};
+  var inr=function(n){return '₹'+Number(n).toLocaleString('en-IN')};
+
+  function load(){
+    try{var raw=localStorage.getItem(KEY);if(raw){var s=JSON.parse(raw);if(s&&typeof s==='object'){
+      state.budget=s.budget||null;state.newBudget=s.newBudget||null;
+      state.expenses=Array.isArray(s.expenses)?s.expenses:[];state.nextId=s.nextId||state.expenses.length+1;}}}catch(e){}
+  }
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify({budget:state.budget,newBudget:state.newBudget,expenses:state.expenses,nextId:state.nextId}))}catch(e){}
+  }
+  function say(id,text,ok){var el=$(id);el.textContent=text;el.className='msg '+(ok?'good':'err')}
+  function wholePositive(v){
+    var n=Number(v);
+    if(v===''||!isFinite(n)||Math.floor(n)!==n)return null;
+    return n>0?n:null;
+  }
+
+  function render(){
+    var has=state.budget!==null;
+    $('setup').classList.toggle('hide',has);
+    $('app').classList.toggle('hide',!has);
+    if(!has)return;
+
+    var isNew=state.view==='new';
+    $('tOrig').setAttribute('aria-selected',!isNew);
+    $('tNew').setAttribute('aria-selected',isNew);
+    $('newBudgetCard').classList.toggle('hide',!isNew);
+    $('nbTitle').textContent=state.newBudget===null?'Set a new budget':'Change your new budget';
+
+    var shown=isNew?state.newBudget:state.budget;
+    var total=state.expenses.reduce(function(s,e){return s+e.amount},0);
+
+    if(isNew&&shown===null){
+      $('remain').textContent='—';
+      $('status').textContent='You haven\'t set a new budget yet. Add one below.';
+      $('status').style.color='var(--mute)';
+      $('fill').style.width='0%';$('pct').textContent='';
+      $('sBudget').textContent='—';
+    }else{
+      var left=shown-total, pct=total/shown*100;
+      $('sumTitle').textContent=left>=0?'Remaining':'Over budget by';
+      $('remain').textContent=inr(Math.abs(left));
+      var color=left<0?'var(--bad)':pct>=80?'var(--warn)':'var(--ok)';
+      $('status').textContent=left<0?'Over budget — you\'ve spent more than planned.':pct>=80?'Careful — you\'ve used most of your budget.':'Under budget — you\'re on track.';
+      $('status').style.color=color;
+      $('fill').style.width=Math.min(pct,100)+'%';
+      $('fill').style.background=color;
+      $('pb').setAttribute('aria-valuenow',Math.round(Math.min(pct,100)));
+      $('pct').textContent=pct.toFixed(1)+'% of budget used';
+      $('sBudget').textContent=inr(shown);
+    }
+    if(!(isNew&&shown===null))$('sumTitle').textContent=$('sumTitle').textContent;
+    else $('sumTitle').textContent='Remaining';
+    $('sSpent').textContent=inr(total);
+    $('sCount').textContent=state.expenses.length;
+
+    var ul=$('list');ul.innerHTML='';
+    if(!state.expenses.length){
+      var li=document.createElement('li');li.className='empty';li.style.display='block';
+      li.textContent='No expenses yet. Add your first one above.';ul.appendChild(li);
+    }else{
+      state.expenses.slice().reverse().forEach(function(e){
+        var li=document.createElement('li');
+        var n=document.createElement('div');n.className='n';
+        n.textContent=e.note||'Expense #'+e.id;
+        var sp=document.createElement('span');sp.textContent=e.note?'Expense #'+e.id:'';
+        if(e.note)n.appendChild(sp);
+        var a=document.createElement('div');a.className='a';a.textContent=inr(e.amount);
+        var b=document.createElement('button');b.textContent='Delete';b.setAttribute('aria-label','Delete expense '+e.id);
+        b.onclick=function(){state.expenses=state.expenses.filter(function(x){return x.id!==e.id});save();render()};
+        li.appendChild(n);li.appendChild(a);li.appendChild(b);ul.appendChild(li);
+      });
+    }
+  }
+
+  $('saveB0').onclick=function(){
+    var n=wholePositive($('b0').value);
+    if(n===null){say('m0','Enter a whole number greater than zero.');return}
+    state.budget=n;save();render();
+  };
+  $('saveB1').onclick=function(){
+    var n=wholePositive($('b1').value);
+    if(n===null){say('m1','Enter a whole number greater than zero.');return}
+    state.newBudget=n;state.view='new';$('b1').value='';save();render();say('m1','New budget saved.',true);
+  };
+  $('add').onclick=function(){
+    var n=wholePositive($('amt').value);
+    if(n===null){say('m2','Enter a whole number greater than zero.');return}
+    state.expenses.push({id:state.nextId++,amount:n,note:$('note').value.trim()});
+    $('amt').value='';$('note').value='';save();render();say('m2','Expense added.',true);$('amt').focus();
+  };
+  $('amt').addEventListener('keydown',function(e){if(e.key==='Enter')$('add').click()});
+  $('note').addEventListener('keydown',function(e){if(e.key==='Enter')$('add').click()});
+  $('b0').addEventListener('keydown',function(e){if(e.key==='Enter')$('saveB0').click()});
+  $('b1').addEventListener('keydown',function(e){if(e.key==='Enter')$('saveB1').click()});
+  $('tOrig').onclick=function(){state.view='orig';render()};
+  $('tNew').onclick=function(){state.view='new';render()};
+  $('reset').onclick=function(){
+    if(!confirm('Delete your budget and all expenses? This cannot be undone.'))return;
+    state={budget:null,newBudget:null,expenses:[],nextId:1,view:'orig'};save();render();
+  };
+
+  load();render();
+})();
+</script>
+</body>
+</html>
